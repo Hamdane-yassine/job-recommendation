@@ -1,9 +1,55 @@
 import { useState } from "react";
+import pdfToText from "react-pdftotext";
 import { Button } from "./components/ui/button";
 import { Progress } from "./components/ui/progress";
 import { Card } from "./components/ui/card";
 import { Dialog } from "./components/ui/dialog";
 import { UploadCloud, Building2, MapPin, Star, X, ChevronLeft, ChevronRight } from "lucide-react";
+
+const skills = {
+  'Python': { synonyms: ['python'], weight: 5 },
+  'SQL': { synonyms: ['sql', 'structured query language'], weight: 4 },
+  'Machine Learning': { synonyms: ['machine learning', 'ml'], weight: 5 },
+  'Deep Learning': { synonyms: ['deep learning', 'dl'], weight: 4 },
+  'Data Analysis': { synonyms: ['data analysis', 'data analytics'], weight: 3 },
+  'Power BI': { synonyms: ['power bi'], weight: 3 },
+  'R': { synonyms: ['r language', 'r programming'], weight: 4 },
+  'Tableau': { synonyms: ['tableau'], weight: 3 },
+  'Big Data': { synonyms: ['big data'], weight: 4 },
+  'Apache Spark': { synonyms: ['spark', 'apache spark'], weight: 4 },
+  'AWS': { synonyms: ['aws', 'amazon web services'], weight: 4 },
+  'Azure': { synonyms: ['azure', 'microsoft azure'], weight: 3 },
+  'TensorFlow': { synonyms: ['tensorflow'], weight: 4 },
+  'Keras': { synonyms: ['keras'], weight: 4 },
+  'Natural Language Processing': { synonyms: ['nlp', 'natural language processing'], weight: 4 },
+  'Git': { synonyms: ['git'], weight: 3 },
+  'NoSQL': { synonyms: ['nosql', 'non-relational databases'], weight: 3 },
+  'Java': { synonyms: ['java'], weight: 3 },
+  'C++': { synonyms: ['c++', 'cpp'], weight: 3 },
+  'Docker': { synonyms: ['docker'], weight: 4 },
+  'Hadoop': { synonyms: ['hadoop'], weight: 4 },
+  'Kafka': { synonyms: ['kafka', 'apache kafka'], weight: 4 },
+  'Scala': { synonyms: ['scala'], weight: 3 },
+  'Pandas': { synonyms: ['pandas'], weight: 3 },
+  'NumPy': { synonyms: ['numpy'], weight: 3 },
+  'Scikit-learn': { synonyms: ['scikit-learn', 'sklearn'], weight: 3 },
+  'Matplotlib': { synonyms: ['matplotlib'], weight: 2 },
+  'Seaborn': { synonyms: ['seaborn'], weight: 2 },
+  'Cloud Computing': { synonyms: ['cloud computing'], weight: 4 },
+  'ETL': { synonyms: ['etl', 'extract transform load'], weight: 3 },
+  'Google Cloud': { synonyms: ['google cloud', 'gcp'], weight: 4 },
+  'Snowflake': { synonyms: ['snowflake'], weight: 3 },
+  'MongoDB': { synonyms: ['mongodb'], weight: 3 },
+  'PostgreSQL': { synonyms: ['postgresql', 'postgres'], weight: 3 },
+  'MySQL': { synonyms: ['mysql'], weight: 3 },
+  'Linux': { synonyms: ['linux'], weight: 3 },
+  'Agile': { synonyms: ['agile', 'scrum methodology'], weight: 2 },
+  'Scrum': { synonyms: ['scrum'], weight: 2 },
+  'Jira': { synonyms: ['jira'], weight: 2 },
+  'DevOps': { synonyms: ['devops'], weight: 4 },
+  'Kubernetes': { synonyms: ['kubernetes', 'k8s'], weight: 4 },
+  'CI/CD': { synonyms: ['ci/cd', 'continuous integration', 'continuous deployment'], weight: 4 }
+};
 
 export default function CVUpload() {
   const [file, setFile] = useState(null);
@@ -20,9 +66,58 @@ export default function CVUpload() {
     }
   };
 
+  const searchSkills = (text) => {
+    const foundSkills = {};
+    const normalizedText = text.toLowerCase();
+    
+    // Helper function to escape special regex characters
+    const escapeRegExp = (string) => {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+  
+    // Helper function to create word boundary patterns that work with special characters
+    const createWordPattern = (word) => {
+      const escaped = escapeRegExp(word);
+      return new RegExp(`(?:^|\\s)${escaped}(?:$|\\s|[.,;!?)])`, 'gi');
+    };
+  
+    // Create a single pass through the text for better performance
+    for (const [skill, data] of Object.entries(skills)) {
+      // Check the main skill name first
+      let pattern = createWordPattern(skill);
+      const mainMatches = (normalizedText.match(pattern) || []).length;
+      
+      if (mainMatches > 0) {
+        foundSkills[skill] = mainMatches * data.weight;
+      }
+  
+      // Check synonyms
+      if (data.synonyms?.length) {
+        for (const synonym of data.synonyms) {
+          pattern = createWordPattern(synonym);
+          const synonymMatches = (normalizedText.match(pattern) || []).length;
+          
+          if (synonymMatches > 0) {
+            foundSkills[skill] = (foundSkills[skill] || 0) + synonymMatches * data.weight;
+          }
+        }
+      }
+    }
+  
+    return foundSkills;
+  };
+
   const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
+
+    try {
+      const text = await pdfToText(file);
+      const skillsFound = searchSkills(text);
+      console.log("Extracted skills:", skillsFound);
+    } catch (error) {
+      console.error("Error extracting text from PDF:", error);
+    }
 
     // Simulate backend response with more jobs for pagination
     setTimeout(() => {
