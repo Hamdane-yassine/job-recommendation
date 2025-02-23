@@ -3,6 +3,7 @@ import pdfToText from "react-pdftotext";
 import { Button } from "./components/ui/button";
 import { Progress } from "./components/ui/progress";
 import { Card } from "./components/ui/card";
+import MatchGauge from './components/ui/MatchGauge';
 import { Dialog } from "./components/ui/dialog";
 import { UploadCloud, Building2, MapPin, Star, X, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -115,6 +116,9 @@ export default function CVUpload() {
       const text = await pdfToText(file);
       const skillsFound = searchSkills(text);
       console.log("Extracted skills:", skillsFound);
+      // Calculate the sum of skills weights
+      const sumOfWeights = Object.values(skillsFound).reduce((acc, weight) => acc + weight, 0);
+      console.log("Sum of skills weights:", sumOfWeights);
     } catch (error) {
       console.error("Error extracting text from PDF:", error);
     }
@@ -128,6 +132,7 @@ export default function CVUpload() {
         location: ["Mountain View, CA", "Menlo Park, CA", "Seattle, WA", "Redmond, WA", "Cupertino, CA"][index % 5],
         rating: (4 + Math.random()).toFixed(1),
         Skills: ["React", "Node.js", "Kubernetes", "JavaScript", "TypeScript"].sort(() => Math.random() - 0.5).slice(0, 3),
+        matchPercentage: Math.floor(65 + Math.random() * 30),
       }));
       setJobs(mockJobs);
       setUploading(false);
@@ -190,43 +195,46 @@ export default function CVUpload() {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900">Recommended Jobs</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {currentJobs.map((job, index) => (
-                <Card 
-                  key={index} 
-                  onClick={() => setSelectedJob(job)}
-                  className="cursor-pointer hover:border-blue-200 transition-all duration-200"
-                >
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-semibold text-lg text-gray-900 truncate max-w-[70%]">{job.title}</h3>
-                      <div className="flex items-center space-x-1 flex-shrink-0">
-                        <Star size={16} className="text-yellow-400 fill-current" />
-                        <span className="text-sm text-gray-600">{job.rating}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 text-gray-600">
-                        <Building2 size={16} className="flex-shrink-0" />
-                        <span className="text-sm truncate">{job.CompanyName}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-gray-600">
-                        <MapPin size={16} className="flex-shrink-0" />
-                        <span className="text-sm truncate">{job.location}</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {job.Skills.map((skill, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </Card>
-              ))}
+            {currentJobs.map((job, index) => (
+  <Card 
+    key={index} 
+    onClick={() => setSelectedJob(job)}
+    className="cursor-pointer hover:border-blue-200 transition-all duration-200"
+  >
+    <div className="space-y-3">
+      <div className="flex justify-between items-start">
+        <h3 className="font-semibold text-lg text-gray-900 truncate max-w-[70%]">{job.title}</h3>
+        <div className="flex items-center space-x-1 flex-shrink-0">
+          <Star size={16} className="text-yellow-400 fill-current" />
+          <span className="text-sm text-gray-600">{job.rating}</span>
+        </div>
+      </div>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-2 text-gray-600">
+          <Building2 size={16} className="flex-shrink-0" />
+          <span className="text-sm truncate">{job.CompanyName}</span>
+        </div>
+        <div className="flex items-center space-x-1 flex-shrink-0">
+          <MatchGauge percentage={job.matchPercentage} size="small" />
+        </div>
+      </div>
+      <div className="flex items-center space-x-2 text-gray-600">
+        <MapPin size={16} className="flex-shrink-0" />
+        <span className="text-sm truncate">{job.location}</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {job.Skills.map((skill, i) => (
+          <span
+            key={i}
+            className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full"
+          >
+            {skill}
+          </span>
+        ))}
+      </div>
+    </div>
+  </Card>
+            ))}
             </div>
 
             {/* Pagination */}
@@ -269,16 +277,19 @@ export default function CVUpload() {
             onClose={() => setSelectedJob(null)} 
             title={
               <div className="flex justify-between items-center w-full">
-                <h2 className="text-xl font-semibold truncate max-w-[90%]">{selectedJob?.title}</h2>
-                <button 
-                  onClick={() => setSelectedJob(null)}
-                  className="p-1 hover:bg-gray-100 rounded-full flex-shrink-0"
-                >
-                  <X size={20} className="text-gray-500" />
-                </button>
+                <h2 className="text-xl font-semibold truncate max-w-[70%]">{selectedJob?.title}</h2>
+                <div className="flex items-center gap-4">
+                  <MatchGauge percentage={85} />
+                  <button 
+                    onClick={() => setSelectedJob(null)}
+                    className="p-1 hover:bg-gray-100 rounded-full flex-shrink-0"
+                  >
+                    <X size={20} className="text-gray-500" />
+                  </button>
+                </div>
               </div>
             }
-          >
+            >
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 max-w-[70%]">
